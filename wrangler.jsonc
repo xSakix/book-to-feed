@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "book-to-feed",
+  "compatibility_date": "2026-01-01",
+
+  // Static assets only. There is deliberately no Worker script: the entire
+  // application runs in the browser (ARCHITECTURE.md §3, §11).
+  "assets": {
+    "directory": "./dist",
+    // Every unknown path serves index.html so client-side routes survive a
+    // reload and a shared deep link.
+    "not_found_handling": "single-page-application",
+  },
+
+  "observability": {
+    "enabled": true,
+  },
+}

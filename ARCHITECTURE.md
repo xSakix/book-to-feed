@@ -1,6 +1,7 @@
 # book-to-feed — Architecture Proposal
 
-> **Status:** Proposal — awaiting acknowledgement. No code written yet.
+> **Status:** Accepted as the plan of record. M0 (skeleton, CI, deployment) is built; M1 is next.
+> The open decisions in §14 are still open — see [#7](https://github.com/xSakix/book-to-feed/issues/7).
 > **Scope of this document:** the full client-side web application (v1).
 
 ---
@@ -25,7 +26,7 @@ Nothing leaves the device. There is no backend.
 1. **Fully local, zero-server.** The EPUB is parsed, stored and rendered in the browser. Books are
    often personal, sometimes legally grey; shipping them to a server is a liability we simply
    refuse to take on. This also makes the app free to host and trivially offline-capable.
-2. **The chapter boundary is a feature, not a limitation.** We deliberately do *not* build one
+2. **The chapter boundary is a feature, not a limitation.** We deliberately do _not_ build one
    endless scroll through the whole book. Finishing a feed is the reward loop. Endless scroll
    removes the sense of completion that makes the metaphor work.
 3. **Segmentation quality is the product.** Everything else — the UI, the graph, the storage — is
@@ -33,7 +34,7 @@ Nothing leaves the device. There is no backend.
    feel like a text file cut with scissors. It gets its own engine, its own tests, its own version
    number (§6).
 4. **Deterministic and re-derivable.** Same book + same segmenter version → byte-identical posts.
-   Reader data (progress, highlights, notes) is anchored to *positions in the source XHTML*, not to
+   Reader data (progress, highlights, notes) is anchored to _positions in the source XHTML_, not to
    post indexes, so we can improve the segmenter later without destroying anyone's reading history.
 5. **The book is untrusted input.** EPUBs are ZIPs full of arbitrary XHTML, CSS and JavaScript.
    Every byte is sanitised before it goes near the DOM (§9).
@@ -75,20 +76,20 @@ shell, which the service worker then caches.
 
 ## 4. Technology choices
 
-| Concern | Choice | Why this and not the obvious alternative |
-|---|---|---|
-| Build | **Vite + TypeScript** | Fast, static output, first-class worker bundling (`new Worker(new URL(...))`). |
-| UI | **React 19** | Boring on purpose. Concurrent rendering helps with long virtualised lists. Preact is a drop-in fallback if bundle size ever becomes a problem. |
-| Routing | **React Router (data mode)** with SPA fallback | Deep-linkable chapters & posts. |
-| State | **Zustand** | The app has little global state (current book, current chapter, settings). Redux is overkill; context alone re-renders too much for a virtualised feed. |
-| Styling | **Tailwind CSS v4** + CSS variables for theming | Social UIs are dense in one-off layout; utility classes suit that. CSS variables let us theme light/dark/sepia without rebuilding. |
-| Unzip | **`fflate`** | ~8 KB, synchronous inflate, works inside a worker. `JSZip` is 3× the size and slower. |
-| EPUB parsing | **Our own parser** over `DOMParser` | *Deliberately not `epub.js`.* epub.js is built to **paginate** and renders chapters inside sandboxed iframes. We need the opposite: the raw semantic block tree so we can re-cut it. Using epub.js would mean fighting it constantly. Our parser is ~400 lines for OPF + NCX + nav-doc. |
-| Sanitising | **DOMPurify** | Battle-tested. Configured to an allow-list (§9). |
-| Storage | **IndexedDB via `idb`** | Blobs (images, covers) plus thousands of post records plus range queries. localStorage caps at ~5 MB and is synchronous — not an option. `idb` is a thin promise wrapper; Dexie adds a query layer we don't need. |
-| Virtualisation | **`@tanstack/react-virtual`** | A chapter can be 300 posts with images; mounting all of them kills mobile scroll. Dynamic measurement is required because post heights vary wildly. |
-| Testing | **Vitest** + **Playwright** | Vitest for the segmenter's golden-file tests; Playwright for import→read→resume flows against real public-domain EPUBs. |
-| Hosting | **Cloudflare Workers Static Assets** | `wrangler deploy`, SPA fallback, immutable asset hashing, custom headers. Leaves the door open for a *tiny* optional Worker later (e.g. OG share-card images) without changing platforms. |
+| Concern        | Choice                                          | Why this and not the obvious alternative                                                                                                                                                                                                                                                |
+| -------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build          | **Vite + TypeScript**                           | Fast, static output, first-class worker bundling (`new Worker(new URL(...))`).                                                                                                                                                                                                          |
+| UI             | **React 19**                                    | Boring on purpose. Concurrent rendering helps with long virtualised lists. Preact is a drop-in fallback if bundle size ever becomes a problem.                                                                                                                                          |
+| Routing        | **React Router (data mode)** with SPA fallback  | Deep-linkable chapters & posts.                                                                                                                                                                                                                                                         |
+| State          | **Zustand**                                     | The app has little global state (current book, current chapter, settings). Redux is overkill; context alone re-renders too much for a virtualised feed.                                                                                                                                 |
+| Styling        | **Tailwind CSS v4** + CSS variables for theming | Social UIs are dense in one-off layout; utility classes suit that. CSS variables let us theme light/dark/sepia without rebuilding.                                                                                                                                                      |
+| Unzip          | **`fflate`**                                    | ~8 KB, synchronous inflate, works inside a worker. `JSZip` is 3× the size and slower.                                                                                                                                                                                                   |
+| EPUB parsing   | **Our own parser** over `DOMParser`             | _Deliberately not `epub.js`._ epub.js is built to **paginate** and renders chapters inside sandboxed iframes. We need the opposite: the raw semantic block tree so we can re-cut it. Using epub.js would mean fighting it constantly. Our parser is ~400 lines for OPF + NCX + nav-doc. |
+| Sanitising     | **DOMPurify**                                   | Battle-tested. Configured to an allow-list (§9).                                                                                                                                                                                                                                        |
+| Storage        | **IndexedDB via `idb`**                         | Blobs (images, covers) plus thousands of post records plus range queries. localStorage caps at ~5 MB and is synchronous — not an option. `idb` is a thin promise wrapper; Dexie adds a query layer we don't need.                                                                       |
+| Virtualisation | **`@tanstack/react-virtual`**                   | A chapter can be 300 posts with images; mounting all of them kills mobile scroll. Dynamic measurement is required because post heights vary wildly.                                                                                                                                     |
+| Testing        | **Vitest** + **Playwright**                     | Vitest for the segmenter's golden-file tests; Playwright for import→read→resume flows against real public-domain EPUBs.                                                                                                                                                                 |
+| Hosting        | **Cloudflare Workers Static Assets**            | `wrangler deploy`, SPA fallback, immutable asset hashing, custom headers. Leaves the door open for a _tiny_ optional Worker later (e.g. OG share-card images) without changing platforms.                                                                                               |
 
 ---
 
@@ -161,12 +162,12 @@ source anchor (`{ blockIndex, charStart, charEnd }`):
 A greedy accumulator with a scored break decision. Budgets are configurable per **post density**
 setting (Compact / Normal / Roomy):
 
-| Parameter | Default (Normal) |
-|---|---|
-| `TARGET` | 650 characters |
-| `SOFT_MAX` | 1 100 characters |
-| `HARD_MAX` | 1 600 characters |
-| `MIN` | 180 characters (below this, keep absorbing) |
+| Parameter  | Default (Normal)                            |
+| ---------- | ------------------------------------------- |
+| `TARGET`   | 650 characters                              |
+| `SOFT_MAX` | 1 100 characters                            |
+| `HARD_MAX` | 1 600 characters                            |
+| `MIN`      | 180 characters (below this, keep absorbing) |
 
 **Hard rules (non-negotiable, applied before scoring):**
 
@@ -223,39 +224,39 @@ split; ≥ 85 % of posts end at a sentence boundary; segmentation is byte-stable
 
 ### 7.1 The metaphor mapping
 
-| Social network concept | book-to-feed meaning |
-|---|---|
-| **Account / profile** | A **chapter** |
-| Display name | Chapter title (falls back to "Chapter 7") |
-| Avatar | The chapter's first image, else a deterministic generated identicon seeded by the title |
-| Bio | First sentence of the chapter + "%d posts · ~%d min read" |
-| **Feed / wall** | That chapter's ordered posts |
-| **Post** | A snippet (§6) |
-| Post timestamp | In-book position: "post 12 of 84" / "≈ 4 min into the chapter" |
-| **Stories bar** (top) | The chapter list. Unread = bright ring, in-progress = partial ring, read = grey |
-| **Friends** | Related chapters (§7.2) |
-| **Friend request / "Add friend"** | The end-of-chapter card that unlocks the next chapter's feed |
-| **Mentions / tags** | Chapters that hyperlink to each other inside the EPUB |
-| **Mutual friends** | Chapters sharing prominent named entities |
-| **Like / reactions** | Reader reactions on a post (local only) |
-| **Comments** | The reader's own margin notes on a post |
-| **Saved / bookmarks** | Highlights |
-| **Share** | Rendered quote card (canvas → PNG) or copied text + attribution |
-| **Notifications** | "You've unlocked Chapter 4", reading streaks, "you're 60 % through the book" |
-| **The author** | The book's own profile — the "page" all chapters belong to |
+| Social network concept            | book-to-feed meaning                                                                    |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| **Account / profile**             | A **chapter**                                                                           |
+| Display name                      | Chapter title (falls back to "Chapter 7")                                               |
+| Avatar                            | The chapter's first image, else a deterministic generated identicon seeded by the title |
+| Bio                               | First sentence of the chapter + "%d posts · ~%d min read"                               |
+| **Feed / wall**                   | That chapter's ordered posts                                                            |
+| **Post**                          | A snippet (§6)                                                                          |
+| Post timestamp                    | In-book position: "post 12 of 84" / "≈ 4 min into the chapter"                          |
+| **Stories bar** (top)             | The chapter list. Unread = bright ring, in-progress = partial ring, read = grey         |
+| **Friends**                       | Related chapters (§7.2)                                                                 |
+| **Friend request / "Add friend"** | The end-of-chapter card that unlocks the next chapter's feed                            |
+| **Mentions / tags**               | Chapters that hyperlink to each other inside the EPUB                                   |
+| **Mutual friends**                | Chapters sharing prominent named entities                                               |
+| **Like / reactions**              | Reader reactions on a post (local only)                                                 |
+| **Comments**                      | The reader's own margin notes on a post                                                 |
+| **Saved / bookmarks**             | Highlights                                                                              |
+| **Share**                         | Rendered quote card (canvas → PNG) or copied text + attribution                         |
+| **Notifications**                 | "You've unlocked Chapter 4", reading streaks, "you're 60 % through the book"            |
+| **The author**                    | The book's own profile — the "page" all chapters belong to                              |
 
 ### 7.2 The chapter graph
 
 Edges are derived at import time and stored in IndexedDB:
 
-| Edge type | Derived from | Presented as |
-|---|---|---|
-| `sequential` | Spine adjacency | "Close friend" — always the primary next/prev |
-| `sibling` | Same parent node in the TOC (same Part/Book) | "Family" |
-| `mentions` | An `<a href>` from chapter A into chapter B's file | "A mentioned B" |
-| `mutualMention` | Links in both directions | "Mutual friends" |
-| `references` | Footnote/endnote targets | "Tagged you in a note" |
-| `sharedCast` *(v2)* | Overlap of prominent capitalised entities, TF-IDF-weighted, stop-listed | "People you may know" |
+| Edge type           | Derived from                                                            | Presented as                                  |
+| ------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| `sequential`        | Spine adjacency                                                         | "Close friend" — always the primary next/prev |
+| `sibling`           | Same parent node in the TOC (same Part/Book)                            | "Family"                                      |
+| `mentions`          | An `<a href>` from chapter A into chapter B's file                      | "A mentioned B"                               |
+| `mutualMention`     | Links in both directions                                                | "Mutual friends"                              |
+| `references`        | Footnote/endnote targets                                                | "Tagged you in a note"                        |
+| `sharedCast` _(v2)_ | Overlap of prominent capitalised entities, TF-IDF-weighted, stop-listed | "People you may know"                         |
 
 `sharedCast` is heuristic, language-dependent and easy to get wrong — it is explicitly **v2**, is
 computed lazily, and is presented as a soft suggestion, never as navigation the reader depends on.
@@ -269,23 +270,23 @@ connect"  →  Chapter feed  →  …  →  Book finished card
 
 Reaching the end of a chapter feed is the only ceremony in the app: a completion card showing what
 you just read, your reactions on it, and the next chapter presented as an incoming friend request.
-Free navigation (jump to any chapter) is always available from the stories bar — we gate *ceremony*,
-never *access*.
+Free navigation (jump to any chapter) is always available from the stories bar — we gate _ceremony_,
+never _access_.
 
 ---
 
 ## 8. Data model (IndexedDB, database `book-to-feed`, version 1)
 
-| Store | Key | Contents | Indexes |
-|---|---|---|---|
-| `books` | `bookId` (sha256) | title, authors, language, publisher, description, coverBlob, spine[], addedAt, lastOpenedAt, segmenterVersion, stats | `by-lastOpened` |
-| `chapters` | `[bookId, index]` | title, href, order, tocDepth, parentIndex, postCount, charCount, readingSeconds, avatarSeed | `by-book` |
-| `posts` | `[bookId, chapterIndex, postIndex]` | type, html (sanitised), plainText, anchor `{blockStart, charStart, blockEnd, charEnd}`, charCount, readingSeconds, isContinuation, pullQuote | `by-chapter` |
-| `resources` | `[bookId, href]` | mediaType, blob | — |
-| `edges` | `[bookId, from, to, type]` | weight | `by-from` |
-| `progress` | `bookId` | currentChapter, currentAnchor, per-chapter `{state, furthestAnchor, completedAt}`, streak, totalSecondsRead | — |
-| `interactions` | auto-increment | bookId, chapterIndex, anchor, kind (`reaction`\|`note`\|`highlight`), payload, createdAt | `by-book`, `by-anchor` |
-| `settings` | fixed key | theme, fontFamily, fontScale, postDensity, reduceMotion, readerModeDefault | — |
+| Store          | Key                                 | Contents                                                                                                                                     | Indexes                |
+| -------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `books`        | `bookId` (sha256)                   | title, authors, language, publisher, description, coverBlob, spine[], addedAt, lastOpenedAt, segmenterVersion, stats                         | `by-lastOpened`        |
+| `chapters`     | `[bookId, index]`                   | title, href, order, tocDepth, parentIndex, postCount, charCount, readingSeconds, avatarSeed                                                  | `by-book`              |
+| `posts`        | `[bookId, chapterIndex, postIndex]` | type, html (sanitised), plainText, anchor `{blockStart, charStart, blockEnd, charEnd}`, charCount, readingSeconds, isContinuation, pullQuote | `by-chapter`           |
+| `resources`    | `[bookId, href]`                    | mediaType, blob                                                                                                                              | —                      |
+| `edges`        | `[bookId, from, to, type]`          | weight                                                                                                                                       | `by-from`              |
+| `progress`     | `bookId`                            | currentChapter, currentAnchor, per-chapter `{state, furthestAnchor, completedAt}`, streak, totalSecondsRead                                  | —                      |
+| `interactions` | auto-increment                      | bookId, chapterIndex, anchor, kind (`reaction`\|`note`\|`highlight`), payload, createdAt                                                     | `by-book`, `by-anchor` |
+| `settings`     | fixed key                           | theme, fontFamily, fontScale, postDensity, reduceMotion, readerModeDefault                                                                   | —                      |
 
 **Storage strategy.** Call `navigator.storage.persist()` on first import so the browser doesn't
 evict a user's library under pressure, and surface `navigator.storage.estimate()` in Settings with
@@ -303,7 +304,7 @@ between devices. Ships in v1 — without it, clearing site data is catastrophic 
 An EPUB is an untrusted archive. Threat: a crafted book executing script in our origin and reading
 the reader's entire library out of IndexedDB.
 
-- **Sanitise everything** with DOMPurify before storage *and* trust nothing at render: no `<script>`,
+- **Sanitise everything** with DOMPurify before storage _and_ trust nothing at render: no `<script>`,
   no `<iframe>`, no `<object>`/`<embed>`, no `on*` handlers, no `javascript:` URLs, no `<style>` or
   inline `style` beyond an allow-list (`font-style`, `font-weight`, `text-align`, `text-indent`).
 - **Rewrite all URLs.** `src`/`href` pointing inside the archive → internal resource references
@@ -312,7 +313,7 @@ the reader's entire library out of IndexedDB.
   when).
 - **CSP** delivered as a response header from Cloudflare:
   `default-src 'self'; img-src 'self' blob: data:; script-src 'self'; style-src 'self' 'unsafe-inline';
-  connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'`.
+connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'`.
 - **No analytics, no telemetry, no fonts from a CDN.** Fonts are self-hosted. The privacy claim
   ("your books never leave your device") must be literally true and verifiable in the network tab.
 - **DRM'd EPUBs are out of scope.** Adobe ADEPT / LCP files are detected (`META-INF/encryption.xml`,
@@ -339,15 +340,15 @@ the reader's entire library out of IndexedDB.
 
 ### Routes
 
-| Route | Screen |
-|---|---|
-| `/` | Library (imported books, continue reading) |
-| `/import` | Drop zone + import progress |
-| `/b/:bookId` | Book profile — "the author's page", chapter grid, overall progress |
-| `/b/:bookId/c/:chapter` | **The chapter feed** |
-| `/b/:bookId/c/:chapter/p/:post` | Deep link to a post (share targets) |
-| `/b/:bookId/graph` | The chapter friend graph, visualised |
-| `/settings` | Theme, typography, density, storage, export/import |
+| Route                           | Screen                                                             |
+| ------------------------------- | ------------------------------------------------------------------ |
+| `/`                             | Library (imported books, continue reading)                         |
+| `/import`                       | Drop zone + import progress                                        |
+| `/b/:bookId`                    | Book profile — "the author's page", chapter grid, overall progress |
+| `/b/:bookId/c/:chapter`         | **The chapter feed**                                               |
+| `/b/:bookId/c/:chapter/p/:post` | Deep link to a post (share targets)                                |
+| `/b/:bookId/graph`              | The chapter friend graph, visualised                               |
+| `/settings`                     | Theme, typography, density, storage, export/import                 |
 
 ---
 
@@ -362,8 +363,8 @@ Static assets only — **no server code in v1.**
   "compatibility_date": "2026-01-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+  },
 }
 ```
 
@@ -399,14 +400,14 @@ tests/
 
 ## 12. Delivery plan
 
-| Milestone | Deliverable | Definition of done |
-|---|---|---|
-| **M0 — Skeleton** | Vite/TS/React scaffold, CI, Cloudflare deploy, design tokens | A blank themed app is live on a URL |
-| **M1 — Import** | fflate + OPF/NCX/nav parser, sanitiser, worker, IndexedDB, library screen | Drop an EPUB → see chapters listed with cover, metadata and progress |
-| **M2 — Segmenter** | Block extraction + scoring engine + golden tests | Fixture books segment within budget and pass the §6.5 assertions |
-| **M3 — The feed** | Virtualised feed, post cards, anchored progress, end-of-chapter card, chapter→chapter nav | A whole novel is readable end to end, resumes exactly where you left off |
-| **M4 — Social layer** | Chapter profiles, stories bar, friend graph, reactions/notes/highlights, share cards | The metaphor in §7.1 is fully present |
-| **M5 — Polish** | PWA/offline, reader mode, a11y pass, themes & typography, export/import, storage manager | WCAG 2.2 AA pass; works offline; data is portable |
+| Milestone             | Deliverable                                                                               | Definition of done                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **M0 — Skeleton**     | Vite/TS/React scaffold, CI, Cloudflare deploy, design tokens                              | A blank themed app is live on a URL                                      |
+| **M1 — Import**       | fflate + OPF/NCX/nav parser, sanitiser, worker, IndexedDB, library screen                 | Drop an EPUB → see chapters listed with cover, metadata and progress     |
+| **M2 — Segmenter**    | Block extraction + scoring engine + golden tests                                          | Fixture books segment within budget and pass the §6.5 assertions         |
+| **M3 — The feed**     | Virtualised feed, post cards, anchored progress, end-of-chapter card, chapter→chapter nav | A whole novel is readable end to end, resumes exactly where you left off |
+| **M4 — Social layer** | Chapter profiles, stories bar, friend graph, reactions/notes/highlights, share cards      | The metaphor in §7.1 is fully present                                    |
+| **M5 — Polish**       | PWA/offline, reader mode, a11y pass, themes & typography, export/import, storage manager  | WCAG 2.2 AA pass; works offline; data is portable                        |
 
 M1–M3 are the walking skeleton — after M3 the app is genuinely usable and everything after is
 enrichment.
