@@ -15,9 +15,14 @@ breakdown (M0–M5).
 
 ## Status
 
-**M0 — project skeleton.** The shell, routing, theming, test harness, CI and
-Cloudflare deployment are in place. Every feature route renders a placeholder
-that links to the issue implementing it. Importing a book comes next, in M1.
+**M1 — the import pipeline.** Drop in an EPUB and it is unzipped in a Web
+Worker, parsed (EPUB 2 and 3), sanitised, and stored in IndexedDB — chapters,
+cover, images and the deterministic part of the chapter graph. The library and
+book profile screens are real; the feed itself is next, in M3, once the
+segmentation engine lands in M2.
+
+Reading a chapter still shows a placeholder — there are no posts until the
+segmenter exists.
 
 ## Getting started
 
@@ -39,6 +44,14 @@ npm run dev
 | `npm run test:e2e`      | Playwright, desktop and mobile viewports              |
 | `npm run size`          | Gzipped bundle budget check                           |
 | `npm run deploy`        | `wrangler deploy` to Cloudflare Workers Static Assets |
+
+### Fixtures
+
+The test suite builds its own EPUBs (`tests/fixtures/build.ts`) rather than
+committing real books. That covers hostile markup, malformed XML and DRM markers
+better than any real book would. Real public-domain books are still needed for
+the M2 segmentation golden files — prose shape is the one thing a synthetic
+fixture cannot fake.
 
 ### Running the e2e suite
 

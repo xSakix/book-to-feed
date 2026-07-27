@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023"],
+    // DOM is here for Playwright: the callbacks passed to `page.evaluate` are
+    // browser code, even though the file around them runs in Node.
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "types": ["node"],

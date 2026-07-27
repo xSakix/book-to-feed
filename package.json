@@ -22,6 +22,9 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
+    "dompurify": "^3.4.12",
+    "fflate": "^0.8.3",
+    "idb": "^8.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.3.0",

@@ -95,9 +95,23 @@ shell, which the service worker then caches.
 
 ## 5. The import pipeline
 
-Runs entirely inside a **Web Worker**. A 500-page novel is ~2–3 MB of XHTML and can be 50 MB with
-images; doing this on the main thread would freeze the UI for seconds. The worker writes directly to
-IndexedDB and streams progress events back for the import screen.
+A 500-page novel is ~2–3 MB of XHTML and can be 50 MB with images; inflating that on the main
+thread would freeze the UI for seconds. So the **decompression runs in a Web Worker**, which is
+where the CPU cost actually is, and the caller drives the pipeline entry by entry.
+
+> **Revised during M1.** This section originally had the worker do everything — unzip, parse,
+> sanitise, store. That is not implementable: `DOMParser` and DOMPurify both need a DOM, and
+> `WorkerGlobalScope` has none. The alternatives were to hand-roll an XML parser and an HTML
+> sanitiser inside the worker, or to keep the DOM work on the main thread. Writing our own
+> sanitiser is precisely the wrong thing to do for the one component whose job is to stop a
+> malicious book executing script, so the split is:
+>
+> - **Worker** — holds the archive bytes, inflates entries on demand (`src/workers/unzip.worker.ts`).
+> - **Main thread** — parses OPF/TOC/XHTML, sanitises, writes to IndexedDB, yielding to the event
+>   loop every few chapters so the progress bar keeps painting.
+>
+> Both sides sit behind the `ArchiveReader` interface, so the parsers are identical either way and
+> the whole pipeline runs synchronously in unit tests. Nothing unsanitised is still ever stored.
 
 ```mermaid
 sequenceDiagram
@@ -280,13 +294,17 @@ never _access_.
 | Store          | Key                                 | Contents                                                                                                                                     | Indexes                |
 | -------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
 | `books`        | `bookId` (sha256)                   | title, authors, language, publisher, description, coverBlob, spine[], addedAt, lastOpenedAt, segmenterVersion, stats                         | `by-lastOpened`        |
-| `chapters`     | `[bookId, index]`                   | title, href, order, tocDepth, parentIndex, postCount, charCount, readingSeconds, avatarSeed                                                  | `by-book`              |
+| `chapters`     | `[bookId, index]`                   | title, href, order, tocDepth, parentIndex, **html** (sanitised), postCount, charCount, readingSeconds, avatarSeed                            | `by-book`              |
 | `posts`        | `[bookId, chapterIndex, postIndex]` | type, html (sanitised), plainText, anchor `{blockStart, charStart, blockEnd, charEnd}`, charCount, readingSeconds, isContinuation, pullQuote | `by-chapter`           |
 | `resources`    | `[bookId, href]`                    | mediaType, blob                                                                                                                              | —                      |
 | `edges`        | `[bookId, from, to, type]`          | weight                                                                                                                                       | `by-from`              |
 | `progress`     | `bookId`                            | currentChapter, currentAnchor, per-chapter `{state, furthestAnchor, completedAt}`, streak, totalSecondsRead                                  | —                      |
 | `interactions` | auto-increment                      | bookId, chapterIndex, anchor, kind (`reaction`\|`note`\|`highlight`), payload, createdAt                                                     | `by-book`, `by-anchor` |
 | `settings`     | fixed key                           | theme, fontFamily, fontScale, postDensity, reduceMotion, readerModeDefault                                                                   | —                      |
+
+**Added during M1:** `chapters.html` was not in the original table. M2 needs cleaned markup to build
+its block stream, and re-deriving it would mean keeping the whole archive and re-sanitising on every
+segmenter change. Storing it keeps the rule that nothing unsanitised is ever persisted.
 
 **Storage strategy.** Call `navigator.storage.persist()` on first import so the browser doesn't
 evict a user's library under pressure, and surface `navigator.storage.estimate()` in Settings with

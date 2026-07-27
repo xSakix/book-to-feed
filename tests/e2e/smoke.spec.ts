@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('the shell loads and navigation works', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Your library' })).toBeVisible();
+  // An empty library, since each test starts from a fresh browser context.
+  await expect(page.getByRole('heading', { name: 'Nothing here yet' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Import', exact: true }).click();
   await expect(page).toHaveURL(/\/import$/);
