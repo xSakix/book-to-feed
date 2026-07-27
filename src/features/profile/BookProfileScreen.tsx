@@ -83,7 +83,8 @@ export function BookProfileScreen() {
                   {chapter.title}
                 </span>
                 <span className="text-muted shrink-0 text-sm">
-                  {Math.max(1, Math.round(chapter.readingSeconds / 60))} min
+                  {chapter.postCount} posts · {Math.max(1, Math.round(chapter.readingSeconds / 60))}{' '}
+                  min
                 </span>
               </Link>
             </li>

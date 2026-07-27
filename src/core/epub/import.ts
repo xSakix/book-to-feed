@@ -8,6 +8,8 @@ import { sanitizeChapter } from '~/core/sanitize/sanitize';
 import { fnv1a } from '~/core/hash';
 import { putBook, putChapters, putEdges, putResources, getBook, touchBook } from '~/core/db';
 import { SEGMENTER_VERSION, type BookRecord, type EdgeRecord } from '~/core/db/schema';
+import { segmentBook } from '~/core/segment';
+import type { PostDensity } from '~/app/store/settings';
 
 /** Characters per minute used for reading estimates; character-based so CJK stays honest. */
 const CHARS_PER_MINUTE = 900;
@@ -18,6 +20,7 @@ export type ImportPhase =
   | 'reading-metadata'
   | 'reading-chapters'
   | 'storing-resources'
+  | 'segmenting'
   | 'linking'
   | 'done';
 
@@ -52,6 +55,8 @@ export interface ImportOptions {
   onProgress?: (progress: ImportProgress) => void;
   /** Yields to the event loop between chapters so the UI keeps painting. */
   yieldToUi?: () => Promise<void>;
+  /** Segmentation budget preset; defaults to the engine's own default. */
+  density?: PostDensity;
 }
 
 const defaultYield = () =>
@@ -202,6 +207,14 @@ export async function importBook(options: ImportOptions): Promise<ImportResult> 
       avatarSeed: fnv1a(`${bookId}:${chapter.href}:${chapter.title}`),
     })),
   );
+
+  // Segmentation is what turns chapters into a feed (#21). It runs here so a
+  // finished import is immediately readable rather than segmenting on first open.
+  report({ phase: 'segmenting', current: 0, total: chapters.length });
+  await segmentBook(book, {
+    ...(options.density !== undefined ? { density: options.density } : {}),
+    onProgress: (current, total) => report({ phase: 'segmenting', current, total }),
+  });
 
   report({ phase: 'linking', current: 0, total: 1 });
   await putEdges(buildEdges(bookId, chapters, links));

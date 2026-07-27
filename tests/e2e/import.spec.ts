@@ -34,6 +34,39 @@ test('imports a book and shows it in the library', async ({ page }) => {
   await expect(page.getByText('3 chapters', { exact: false })).toBeVisible();
 });
 
+test('segments the book into posts during import', async ({ page }) => {
+  await page.goto('/import');
+  await page.setInputFiles('input[type="file"]', {
+    name: 'quiet-house.epub',
+    mimeType: 'application/epub+zip',
+    buffer: asBuffer(simpleBook()),
+  });
+  await expect(page.getByRole('heading', { name: 'Your feed is ready' })).toBeVisible();
+  await page.getByRole('button', { name: /Open The Quiet House/ }).click();
+
+  // Post counts on the chapter list are the visible proof that segmentation ran.
+  await expect(page.getByText(/\d+ posts ·/).first()).toBeVisible();
+
+  const posts = await page.evaluate(async () => {
+    const open = indexedDB.open('book-to-feed');
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      open.onsuccess = () => resolve(open.result);
+      open.onerror = () => reject(new Error('open failed'));
+    });
+    const request = database.transaction('posts', 'readonly').objectStore('posts').getAll();
+    return new Promise<{ type: string; charCount: number; anchor: unknown }[]>(
+      (resolve, reject) => {
+        request.onsuccess = () => resolve(request.result as never);
+        request.onerror = () => reject(new Error('read failed'));
+      },
+    );
+  });
+
+  expect(posts.length).toBeGreaterThan(0);
+  expect(posts.some((post) => post.type === 'heading')).toBe(true);
+  expect(posts.every((post) => post.anchor !== undefined)).toBe(true);
+});
+
 test('the imported book survives a reload', async ({ page }) => {
   await page.goto('/import');
   await page.setInputFiles('input[type="file"]', {

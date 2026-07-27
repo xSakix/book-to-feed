@@ -19,13 +19,17 @@ const PHASE_LABEL: Record<ImportProgress['phase'], string> = {
   'reading-metadata': 'Reading the title page',
   'reading-chapters': 'Building your feed',
   'storing-resources': 'Saving illustrations',
+  segmenting: 'Writing the posts',
   linking: 'Introducing the chapters',
   done: 'Ready',
 };
 
 export function phaseLabel(progress: ImportProgress): string {
   const base = PHASE_LABEL[progress.phase];
-  if (progress.total > 1 && progress.phase === 'reading-chapters') {
+  if (
+    progress.total > 1 &&
+    (progress.phase === 'reading-chapters' || progress.phase === 'segmenting')
+  ) {
     return `${base} — chapter ${progress.current} of ${progress.total}`;
   }
   return base;

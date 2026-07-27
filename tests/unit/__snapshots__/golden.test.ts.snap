@@ -1,0 +1,228 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden segmentation > dialogue — post shape is stable 1`] = `
+[
+  {
+    "chars": 23,
+    "continuation": undefined,
+    "ends": "What the Neighbour Said",
+    "starts": "What the Neighbour Said",
+    "type": "heading",
+  },
+  {
+    "chars": 663,
+    "continuation": undefined,
+    "ends": "a whole winter."
+Ilse said nothing.",
+    "starts": "The neighbour was watering a window box that ",
+    "type": "text",
+  },
+  {
+    "chars": 104,
+    "continuation": undefined,
+    "ends": "y telling you what the window did."",
+    "starts": ""The house has been empty eleven years," the ",
+    "type": "text",
+  },
+]
+`;
+
+exports[`golden segmentation > dialogue — quality metrics are stable 1`] = `
+{
+  "longest": 663,
+  "meanLength": 384,
+  "medianLength": 663,
+  "posts": 3,
+  "proseposts": 2,
+  "sentenceEndRate": 1,
+  "shortest": 104,
+}
+`;
+
+exports[`golden segmentation > long-paragraph — post shape is stable 1`] = `
+[
+  {
+    "chars": 13,
+    "continuation": undefined,
+    "ends": "The Inventory",
+    "starts": "The Inventory",
+    "type": "heading",
+  },
+  {
+    "chars": 948,
+    "continuation": undefined,
+    "ends": "iture. She wrote down what she saw.",
+    "starts": "In the first room she found what the inventor",
+    "type": "text",
+  },
+  {
+    "chars": 948,
+    "continuation": true,
+    "ends": "iture. She wrote down what she saw.",
+    "starts": "In the fourth room she found what the invento",
+    "type": "text",
+  },
+  {
+    "chars": 950,
+    "continuation": true,
+    "ends": "iture. She wrote down what she saw.",
+    "starts": "In the seventh room she found what the invent",
+    "type": "text",
+  },
+  {
+    "chars": 952,
+    "continuation": true,
+    "ends": "iture. She wrote down what she saw.",
+    "starts": "In the tenth room she found what the inventor",
+    "type": "text",
+  },
+  {
+    "chars": 641,
+    "continuation": true,
+    "ends": "iture. She wrote down what she saw.",
+    "starts": "In the thirteenth room she found what the inv",
+    "type": "text",
+  },
+]
+`;
+
+exports[`golden segmentation > long-paragraph — quality metrics are stable 1`] = `
+{
+  "longest": 952,
+  "meanLength": 888,
+  "medianLength": 948,
+  "posts": 6,
+  "proseposts": 5,
+  "sentenceEndRate": 1,
+  "shortest": 641,
+}
+`;
+
+exports[`golden segmentation > nonfiction — post shape is stable 1`] = `
+[
+  {
+    "chars": 27,
+    "continuation": undefined,
+    "ends": "The Cost of Closing a House",
+    "starts": "The Cost of Closing a House",
+    "type": "heading",
+  },
+  {
+    "chars": 1120,
+    "continuation": undefined,
+    "ends": "aker's retainer, usually quarterly.",
+    "starts": "Between 1908 and 1935 the practice of closing",
+    "type": "text",
+  },
+  {
+    "chars": 72,
+    "continuation": undefined,
+    "ends": "13 years19191127 years1935282 years",
+    "starts": "YearHouses closedMedian duration1908413 years",
+    "type": "table",
+  },
+  {
+    "chars": 234,
+    "continuation": undefined,
+    "ends": "m that employed him closed in 1938.",
+    "starts": "One caretaker's account book records the reas",
+    "type": "text",
+  },
+]
+`;
+
+exports[`golden segmentation > nonfiction — quality metrics are stable 1`] = `
+{
+  "longest": 1120,
+  "meanLength": 677,
+  "medianLength": 1120,
+  "posts": 4,
+  "proseposts": 2,
+  "sentenceEndRate": 1,
+  "shortest": 234,
+}
+`;
+
+exports[`golden segmentation > novel — post shape is stable 1`] = `
+[
+  {
+    "chars": 10,
+    "continuation": undefined,
+    "ends": "An Arrival",
+    "starts": "An Arrival",
+    "type": "heading",
+  },
+  {
+    "chars": 749,
+    "continuation": undefined,
+    "ends": "ty house is a lie told to yourself.",
+    "starts": "The house had been empty for eleven years, an",
+    "type": "text",
+  },
+  {
+    "chars": 216,
+    "continuation": undefined,
+    "ends": "o a silence that had changed shape.",
+    "starts": "She climbed the stairs. The seventh tread gav",
+    "type": "text",
+  },
+  {
+    "chars": 0,
+    "continuation": undefined,
+    "ends": "",
+    "starts": "",
+    "type": "separator",
+  },
+  {
+    "chars": 542,
+    "continuation": undefined,
+    "ends": "to stand on a landing?
+She went in.",
+    "starts": "By the time she reached the landing the light",
+    "type": "text",
+  },
+]
+`;
+
+exports[`golden segmentation > novel — quality metrics are stable 1`] = `
+{
+  "longest": 749,
+  "meanLength": 502,
+  "medianLength": 542,
+  "posts": 5,
+  "proseposts": 3,
+  "sentenceEndRate": 1,
+  "shortest": 216,
+}
+`;
+
+exports[`golden segmentation > poetry — post shape is stable 1`] = `
+[
+  {
+    "chars": 30,
+    "continuation": undefined,
+    "ends": "Three Poems for an Empty House",
+    "starts": "Three Poems for an Empty House",
+    "type": "heading",
+  },
+  {
+    "chars": 318,
+    "continuation": undefined,
+    "ends": "footand gives, and gives, and gives",
+    "starts": "The shutters were drawn by a careful handand ",
+    "type": "verse",
+  },
+]
+`;
+
+exports[`golden segmentation > poetry — quality metrics are stable 1`] = `
+{
+  "longest": 0,
+  "meanLength": 0,
+  "medianLength": 0,
+  "posts": 2,
+  "proseposts": 0,
+  "sentenceEndRate": 0,
+  "shortest": 0,
+}
+`;

@@ -15,14 +15,14 @@ breakdown (M0–M5).
 
 ## Status
 
-**M1 — the import pipeline.** Drop in an EPUB and it is unzipped in a Web
-Worker, parsed (EPUB 2 and 3), sanitised, and stored in IndexedDB — chapters,
-cover, images and the deterministic part of the chapter graph. The library and
-book profile screens are real; the feed itself is next, in M3, once the
-segmentation engine lands in M2.
+**M2 — the segmentation engine.** An imported book is now cut into posts:
+blocks are extracted from the sanitised markup, then grouped by a scored break
+decision that tries to end every post on a beat. Headings, images, tables and
+scene breaks stand alone; dialogue exchanges are never split; an over-long
+paragraph is divided at sentence boundaries.
 
-Reading a chapter still shows a placeholder — there are no posts until the
-segmenter exists.
+The feed UI itself is next, in M3 — the posts exist in storage and their counts
+show on the book profile, but reading a chapter still shows a placeholder.
 
 ## Getting started
 
@@ -44,6 +44,15 @@ npm run dev
 | `npm run test:e2e`      | Playwright, desktop and mobile viewports              |
 | `npm run size`          | Gzipped bundle budget check                           |
 | `npm run deploy`        | `wrangler deploy` to Cloudflare Workers Static Assets |
+
+### Tuning the segmenter
+
+The scoring weights in `src/core/segment/segment.ts` are an informed starting
+point, not truth. `tests/unit/golden.test.ts` is what makes changing them safe:
+it snapshots the shape of every post per genre and prints a metrics table
+(mean/median length, sentence-end rate) on every run. A snapshot diff there is
+the point — read it, decide whether the new cuts read better, then accept it
+with `npm test -- -u`.
 
 ### Fixtures
 
